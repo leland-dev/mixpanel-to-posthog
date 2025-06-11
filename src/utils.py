@@ -1,7 +1,7 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from rich import print as rprint
-from rich.prompt import Prompt
+from rich.prompt import Prompt, IntPrompt
 
 def validate_env():
     # Check if Mixpanel credentials are in env
@@ -36,3 +36,37 @@ def get_valid_date_range():
             rprint("[red]Invalid date format. Please use YYYY-MM-DD[/red]")
     
     return from_dt, to_dt
+
+def get_chunk_size() -> int:
+    """Get the chunk size in days from the user."""
+    while True:
+        chunk_size = IntPrompt.ask(
+            "Enter chunk size in days",
+            default=7,
+            show_default=True
+        )
+        if chunk_size > 0:
+            return chunk_size
+        rprint("[red]Chunk size must be greater than 0[/red]")
+
+def chunk_date_range(from_date: datetime, to_date: datetime, chunk_size_days: int = 7) -> list[tuple[datetime, datetime]]:
+    """
+    Split a date range into smaller chunks.
+    
+    Args:
+        from_date: Start date
+        to_date: End date
+        chunk_size_days: Number of days in each chunk (default: 7)
+    
+    Returns:
+        List of (chunk_start, chunk_end) datetime tuples
+    """
+    chunks = []
+    current_date = from_date
+    
+    while current_date < to_date:
+        chunk_end = min(current_date + timedelta(days=chunk_size_days), to_date)
+        chunks.append((current_date, chunk_end))
+        current_date = chunk_end + timedelta(days=1)
+    
+    return chunks

@@ -74,8 +74,8 @@ class MixpanelExporter:
                 if formatted_data["distinct_id"] and formatted_data["time"]:
                     events.append(formatted_data)
                     event_count += 1
-                    if event_count % 100 == 0:
-                        log.info("Processed events", extra={"count": event_count})
+                    if event_count % 1000 == 0:
+                        log.info(f"Processed {event_count} events")
                 else:
                     log.info("Skipping event with no distinct_id or time", extra={"event": formatted_data["event"]})
 
@@ -83,7 +83,7 @@ class MixpanelExporter:
                 log.error(f"Error decoding JSON: {str(e)}")
                 continue
 
-        log.info("Finished reading events", extra={"total_events": event_count})
+        log.info(f"Finished reading {event_count} events", extra={"total_events": event_count})
         return events
 
     def _format_data_line(self, line: Dict[str, Any]) -> Dict[str, Any]:
