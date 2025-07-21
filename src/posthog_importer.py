@@ -3,9 +3,27 @@ import time
 from typing import List, Dict, Any
 from posthog import Posthog
 from rich import print as rprint
+from src.mapping import name_mapping
 
 # Constants
 DELAY_MS = 1  # Delay between posthog queue events to avoid overloading the API
+
+def map_event_name(event: str, properties: Dict[str, Any]) -> str:
+    """Map Mixpanel event names to PostHog event names."""
+    # Handle special case for Leland+ Banner Click
+    if event == 'Leland+ Banner Click':
+        source = properties.get('source', '').lower()
+        if source == 'srp':
+            return 'srp--leland_plus_banner_click'
+        elif source == 'article':
+            return 'article_page--leland_plus_banner_click'
+        elif source == 'post_checkout':
+            return 'post_checkout--leland_plus_banner_click'
+        else:
+            return 'leland_plus_banner--click'
+    
+    # Handle regular mappings - if not found in mapping, return original event name
+    return name_mapping.get(event, event)
 
 def posthog_import(data: List[Dict[str, Any]]) -> None:
     """Import events from Mixpanel to Posthog."""
@@ -14,6 +32,9 @@ def posthog_import(data: List[Dict[str, Any]]) -> None:
     for line in data:
         if line["event"] == "$mp_web_page_view":
             line["event"] = "$pageview"
+        else:
+            # Map the event name using our mapping function
+            line["event"] = map_event_name(line["event"], line["properties"])
         
         # Construct properties
         properties = {}
